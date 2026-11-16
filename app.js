@@ -4,6 +4,7 @@ const { AppError } = require('./src/fs/errors');
 const { generateBigFile } = require('./src/streams/generate');
 const { convertBigFile } = require('./src/streams/convert');
 const { compare } = require('./src/streams/compare');
+const { runMain, runWorker } = require('./src/workers/run');
 
 
 const commands = {
@@ -90,6 +91,19 @@ const commands = {
     usage: 'compare <full|stream>   (сравнение readFileSync и Stream)',
     minArgs: 1,
     run: async ([mode]) => compare(mode),
+  },
+    heavy: {
+    usage: 'heavy <main|worker> [раундов хеширования, по умолчанию 5]',
+    minArgs: 1,
+    run: async ([mode, roundsRaw = '5']) => {
+      const rounds = Number(roundsRaw);
+      if (!Number.isInteger(rounds) || rounds <= 0) {
+        throw new AppError(`Число раундов должно быть целым больше нуля, получено "${roundsRaw}".`);
+      }
+      if (mode === 'main') await runMain(rounds);
+      else if (mode === 'worker') await runWorker(rounds);
+      else throw new AppError('Режим должен быть "main" или "worker".');
+    },
   },
 };
 
